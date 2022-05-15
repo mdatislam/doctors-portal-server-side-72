@@ -25,6 +25,11 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
             const result = await cursor.toArray()
             // console.log(result)
             res.send(result)
+        });
+        app.get('/appointments', async (req,res)=>{
+          const query = req.body
+          const result = await appointmentCollection.insertOne(query)
+          res.send(result)
         })
 
     }
