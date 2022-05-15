@@ -1,48 +1,50 @@
-const express = require('express')
-const app = express()
-const cors = require('cors');
-require('dotenv').config()
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const port = process.env.PORT || 5000
+const express = require("express");
+const app = express();
+const cors = require("cors");
+require("dotenv").config();
+const { MongoClient, ServerApiVersion } = require("mongodb");
+const port = process.env.PORT || 5000;
 
 //midleware
-app.use(cors())
-app.use(express.json())
-
+app.use(cors());
+app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.bqdh1.mongodb.net/myFirstDatabase?retryWrites=true&w=majority`;
-const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
+const client = new MongoClient(uri, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+  serverApi: ServerApiVersion.v1,
+});
 // console.log(uri)
 
-  async function run() {
-    try {
-      await client.connect();
-    const appointmentCollection = client.db("Doctors-Portal").collection("appointments");
-        console.log('db connect')
-        app.get('/appointments', async (req,res)=>{
-            const query= {};
-            const cursor=  appointmentCollection.find(query)
-            const result = await cursor.toArray()
-            // console.log(result)
-            res.send(result)
-        });
-        app.get('/appointments', async (req,res)=>{
-          const query = req.body
-          const result = await appointmentCollection.insertOne(query)
-          res.send(result)
-        })
-
-    }
-    finally{
-
-    }
+async function run() {
+  try {
+    await client.connect();
+    const appointmentCollection = client
+      .db("Doctors-Portal")
+      .collection("appointments");
+    console.log("db connect");
+    app.get("/appointments", async (req, res) => {
+      const query = {};
+      const cursor = appointmentCollection.find(query);
+      const result = await cursor.toArray();
+      // console.log(result)
+      res.send(result);
+    });
+    app.get("/appointments", async (req, res) => {
+      const query = req.body;
+      const result = await appointmentCollection.insertOne(query);
+      res.send(result);
+    });
+  } finally {
+  }
 }
 run().catch(console.dir);
 
-app.get('/', (req, res) => {
-  res.send('Hello  Doctor Uncle!')
-})
+app.get("/", (req, res) => {
+  res.send("Hello  Doctor Uncle!");
+});
 
 app.listen(port, () => {
-  console.log(`Doctor app listening on port ${port}`)
-})
+  console.log(`Doctor app listening on port ${port}`);
+});
