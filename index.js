@@ -34,7 +34,7 @@ async function run() {
       // console.log(result)
       res.send(result);
     });
-      // For new booking purpose
+    // For new booking purpose
     app.post("/booking", async (req, res) => {
       const query = req.body;
       console.log(query);
