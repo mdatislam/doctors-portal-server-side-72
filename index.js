@@ -34,12 +34,45 @@ async function run() {
       // console.log(result)
       res.send(result);
     });
+
+    app.get("/available", async (req, res) => {
+      const date = req.query.date;
+      //step-1. to get all services
+      const services = await appointmentCollection.find().toArray();
+      // step-2 to get all booked of that day.
+      const query = { date: date };
+      const bookings = await bookingCollection.find(query).toArray();
+      // step- 3 for service
+      services.forEach((service) => {
+        // step-4 find booking of that service
+        const serviceBooking = bookings.filter(
+          (book) => book.treatmentName == service.name
+        );
+        //step-5 fined the booked slot
+        const bookedSlots = serviceBooking.map((book) => book.slot);
+        // step-6 to get available slots
+        const availableSlots = service.slots.filter(
+          (s) => !bookedSlots.includes(s)
+        );
+        service.slots = availableSlots; // service er slolt guloke availableSlot die replace kora
+      });
+      res.send(services);
+    });
     // For new booking purpose
     app.post("/booking", async (req, res) => {
-      const query = req.body;
-      console.log(query);
-      const result = await bookingCollection.insertOne(query);
-      res.send(result);
+      const booking = req.body;
+      const query = {
+        treatmentName: booking.treatmentName,
+        patient: booking.patient,
+        date: booking.date,
+      };
+      /* console.log(query) */
+      const exist = await bookingCollection.findOne(query);
+      if (exist) {
+        return res.send({ success: false, booking: exist });
+      }
+      const result = await bookingCollection.insertOne(booking);
+      return res.send({ success: true, result });
     });
   } finally {
   }
