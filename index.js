@@ -16,21 +16,24 @@ const client = new MongoClient(uri, {
   useUnifiedTopology: true,
   serverApi: ServerApiVersion.v1,
 });
+
+
+
 // console.log(uri)
-/* function jwtVeryfi(res, req, next) {
+function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) {
     return res.status(401).send({ message: "Unauthorize access" });
   }
   const token = authHeader.split(" ")[1];
-  jwt.verify(token, "process.env.ACCESS_TOKEN_SECRET", function (err, decoded) {
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
     if (err) {
       return res.status(403).send({ message: "Forbiden access" });
     }
     req.decoded = decoded;
     next();
   });
-} */
+}
 
 async function run() {
   try {
@@ -51,6 +54,11 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/users", async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result);
+    });
+
     app.get("/booking", async (req, res) => {
       const patient = req.query.patient;
       // const decodedEmail = req.decoded.email;
@@ -65,13 +73,13 @@ async function run() {
 
     app.get("/available", async (req, res) => {
       const date = req.query.date;
-      console.log(date);
+      // console.log(date);
       //step-1. to get all services
       const services = await appointmentCollection.find().toArray();
       // step-2 to get all booked of that day.
       const query = { date: date };
       const bookings = await bookingCollection.find(query).toArray();
-      console.log(bookings);
+      // console.log(bookings);
       // step- 3 for service
       services.forEach((service) => {
         // step-4 find booking of that service
@@ -88,6 +96,56 @@ async function run() {
       });
       res.send(services);
     });
+    // Check admin user
+
+    
+    app.get('/admin/:email', async(req,res)=>{
+      const email = req.params.email;
+      const user = await userCollection.findOne({email:email});
+      console.log('admin', user)
+      const isAdmin= user.role==="admin";
+      console.log(isAdmin)
+      res.send({admin:isAdmin})
+    })
+
+
+    // To add admin role from available user
+
+    app.put("/user/admin/:email", verifyJWT, async (req, res) => {
+      const email = req.params.email;
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({
+        email: requester,
+      });
+      if (requesterAccount.role === "admin") {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: "admin" },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      } else {
+        res.status(403).send({ message: "forbidden" });
+      }
+    });
+
+    /* app.put('/user/admin/:email',  async (req, res) => {
+      const email = req.params.email;
+      const requester = req.decoded.email;
+      const requesterAccount = await userCollection.findOne({ email: requester });
+      if (requesterAccount.role === 'admin') {
+        const filter = { email: email };
+        const updateDoc = {
+          $set: { role: 'admin' },
+        };
+        const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+      
+      else{
+        res.status(403).send({message: 'forbidden'});
+      }
+
+    })  */
 
     app.put("/user/:email", async (req, res) => {
       const email = req.params.email;
